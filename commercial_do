@@ -1,0 +1,186 @@
+SELECT 
+	DISTINCT
+	CASE
+	WHEN	
+		POL.PRODUCT_1_NP = 'DndO'
+			THEN 'Commercial D&O'
+	WHEN	
+		POL.PRODUCT_1_NP = 'EPL'
+			THEN 'Commercial D&O EPL'
+	WHEN	
+		POL.PRODUCT_1_NP = 'PTL'
+			THEN 'Commercial D&O PTL'
+	ELSE 'Commercial D&O'
+	END AS PRODUCT
+
+	, INITCAP(POL.COMPANYTYPE_NP) AS "Company Type"
+	
+	, Upper(trim(PC.POLICYNUMBER_1_NP)) AS CORE_EXCL_POL_NUMBER_JOIN
+	, SUBSTR(PC.NAICS_CODE_NP,1,6) AS NAICS_CODE
+	, CASE 
+		WHEN
+			UPPER(PC.NYSE_NP) LIKE '%YES%' 
+				THEN 'US Direct Listing'
+		WHEN 
+			UPPER(PC.NASDAQ_NP) LIKE '%YES%' 
+				THEN 'US Direct Listing'
+		WHEN
+			UPPER(PC.AMEX_NP) LIKE '%YES%' 
+				THEN 'US Direct Listing'
+		WHEN 
+			UPPER(PC.ADRIII_NP) LIKE '%YES%' AND UPPER(PC.NYSE_NP) NOT LIKE '%YES%' AND UPPER(PC.NASDAQ_NP) NOT LIKE '%YES%' AND UPPER(PC.AMEX_NP) NOT LIKE '%YES%' 
+				THEN 'ADR2/3'
+		WHEN
+			UPPER(PC.ADRII_NP) LIKE '%YES%' AND UPPER(PC.NYSE_NP) NOT LIKE '%YES%' AND UPPER(PC.NASDAQ_NP) NOT LIKE '%YES%' AND UPPER(PC.AMEX_NP) NOT LIKE '%YES%' 
+				THEN 'ADR2/3'			
+		ELSE
+			'Not US Exposed'
+	END AS US_EXPOSURE
+	, PC.NAICSSEGMENT_NP AS "Hazard Class"
+	, DATE(PC.PolEffectiveDate_np) as "Policy Effective Date"
+	, PC.POLEFFECTIVEYEAR_NP as "Underwriting Year"
+	, CASE 
+		WHEN 
+			PC.NEWRENEWAL_NP='New' 
+				THEN 'N'
+	 	WHEN 
+			PC.NEWRENEWAL_NP='Renewal' 
+				THEN 'R'
+	 	ELSE 'NA' 
+		END AS NEWRENEWAL_NP
+	, PC.QuoteorBoundPrem_1_np as "Quoted or Bound Premium"
+	, CASE
+		WHEN
+			PC.POLICYSTATUS_1_NP LIKE '%Bound%'
+			AND
+			PC.NEWRENEWAL_NP = 'Renewal'
+			AND
+			(
+			PC.ValidatedRC_Net_1_np IS NULL
+			OR
+			PC.MechanicalRC_Gross_1_np IS NULL
+			OR
+			PC.MechanicalRC_Net_1_np IS NULL
+			OR
+			PC.ValidatedRC_Gross_1_np IS NULL
+			)
+				THEN
+					'Bound - Policy Incorrect'
+		WHEN
+			PC.POLICYSTATUS_1_NP LIKE '%Bound - CORE Entry Incorrect%'
+			THEN
+				'Bound - Policy Incorrect'
+		ELSE
+			PC.POLICYSTATUS_1_NP
+		END AS "Policy Status"
+	, CASE
+		WHEN
+			(
+			PC.ValidatedRC_Net_1_np IS NULL
+			OR
+			PC.MechanicalRC_Gross_1_np IS NULL
+			OR
+			PC.MechanicalRC_Net_1_np IS NULL
+			OR
+			PC.ValidatedRC_Gross_1_np IS NULL
+			)
+				THEN
+					'1'
+		ELSE
+			'0'
+		END AS "Rate Change Missing Indicator"
+	, PC.ValidatedRC_Net_1_np as "Validated RC Net"
+	, PC.VALIDATEDRC_NET_COMMENT_1_NP as "Validated RC Net Comment"
+	, PC.BenchmarkPremium_1_np as "Benchmark Premium"
+	, PC.AdjustedPremium_1_np as "Adjusted Premium"
+	, PC.QuotedorBoundBenchmarkRatio_1_np as "B/B Ratio"
+	, PC.MechanicalRC_Gross_1_np as "Mechanical RC Gross"
+	, PC.MechanicalRC_Net_1_np as "Mechanical RC Net"
+	, PC.ValidatedRC_Gross_1_np as "Validated RC Gross"
+	, UPPER(PC.SIDECOVERAGE_NP) AS "Side Coverage"
+	, PC.QC_FX_NP AS "QC FX Rate"
+	, PC.QC_FX_EP AS "QC FX Rate_ep"
+	, PC.QC_FX_ep_RCFX  AS "QC FX Rate ep RC"
+	, PC.Brokerage_1_ep AS "Brokerage in % ep"
+	, PC.Brokerage_1_np AS "Brokerage in %"
+	, PC.QuoteOrBoundPrem_1_ep AS "Quoted or Bound Premium ep"
+	, PC.ChangeSIRFactor_1_np AS "Change in DED Factor"
+	, PC.ChangeAP_1_np AS "Change in Att Point"
+	, PC.ChangeLimit_1_np AS "Change in Limit"
+	, PC.ChangeExposure_1_np AS "Change in Exposure"
+	, PC.QuoteOrBoundPrem_1_ep*PC.QC_FX_EP as "Expiring Premium Gross USD-FxEP"
+	, PC.QuoteOrBoundPrem_1_ep*PC.QC_FX_EP_RCFX as "Expiring Premium Gross USD-FxEPRC"
+	, PC.QuoteorBoundPrem_1_np*PC.QC_FX_NP AS "Quoted or Bound Premium USD NP"
+	, PC.QuoteOrBoundPrem_1_ep*PC.QC_FX_EP as "Quoted or Bound Premium USD EP"
+	, PC.QuoteorBoundPrem_1_np AS "Quoted or Bound Premium NP"
+	, PC.QuoteOrBoundPrem_1_ep as "Quoted or Bound Premium EP"
+	, CASE
+		WHEN	
+			POL.PRODUCT_1_NP = 'DndO'
+				THEN 'Commercial D&O'
+		WHEN	
+			POL.PRODUCT_1_NP = 'EPL'
+				THEN 'Commercial D&O EPL'
+		WHEN	
+			POL.PRODUCT_1_NP = 'PTL'
+				THEN 'Commercial D&O PTL'
+		ELSE 'Commercial D&O'
+		END AS MENDIX_SRC
+	, PC.GELR_1_NP AS "GELR"
+	, PC.AssetSize_EC_NP*PC.EC_FX_np as "Assets in USD"
+	, PC.Attachment_1_np*PC.QC_FX_np as "Attachment Point in USD"
+	, PC.Limit_1_np*PC.QC_FX_np "Limit in USD"
+	, PC.QuotedorBoundRpM_1_np as "Quoted or Bound Rate per Million"
+	, PC.PXS_1_NP as "Primary_Excess"
+	, CASE 
+		WHEN 
+			PC.Underwriter_Surname_np=PC.Underwriter_Firstname_np 
+				THEN PC.Underwriter_Surname_np 
+		ELSE 
+			PC.Underwriter_Firstname_np||' '||PC.Underwriter_Surname_np 
+		END AS UNDERWRITER
+	, TO_DATE(PC.PolExpirationDate_np,'DD/MM/YYYY') AS "Policy Expiration Date"
+	, (((1 + PC.CHANGESIRFACTOR_1_NP/100)*(1 + PC.ChangeAP_1_np/100)*(1 + PC.ChangeLimit_1_np/100))-1)*100 AS "Change Structure"
+	, PC.CHANGEEXPOSURE_1_NP AS "Change Exposure"
+	, PC.CHANGETOTAL_1_NP AS "Change Total"
+	, PC.ACEShare_1_np AS WRITTENLINE_1_NP
+	, PC.OBJMODAPPLIED_NP AS OBJMODAPPLIED_NP
+	, PC.ObjModApplied_ep_RC AS OBJMODAPPLIED_EP_RC
+	, PC.LossCost_QC_np AS BASELOSSCOST_QC_NP
+	, PC.LossCost_QC_ep_RC AS BASELOSSCOST_QC_EP_RC	
+	, PC.BROKER_NP AS BROKER
+	, PC.TOTALREVENUE_EC_NP*PC.EC_FX_NP AS TOTAL_REVENUE
+	, PC.TOTALUSREVENUE_EC_NP AS TOTAL_REVENUE_US
+		
+FROM 
+	DB_P_STG_MENDIX_CDO.DB_P_STG_MENDIX_OWNER.V_POLICY_COMBINED pc
+	LEFT JOIN
+	DB_P_STG_MENDIX_CDO.DB_P_STG_MENDIX_OWNER.CDO_POLICY POL
+		ON PC.POLICYID = POL.POLICYID
+
+WHERE 
+	PC.POLICYNUMBER_1_NP is not null 
+	and 
+	trim(PC.POLICYNUMBER_1_NP) NOT IN ('-','0','','0000','000','00000')
+	and PC.PolicyStatus_1_np in ('Renewed','On Risk - Awaiting Booking','On Risk - Booked','Bound')
+	and 
+	to_date(pc.policy_modified_Date,'dd/mm/yyyy')=
+		(select 
+			max(to_date(p.policy_modified_Date,'dd/mm/yyyy')) 
+		from 
+			DB_P_STG_MENDIX_CDO.DB_P_STG_MENDIX_CDO_OWNER.v_policy_combined p
+		LEFT JOIN
+			DB_P_STG_MENDIX_CDO.DB_P_STG_MENDIX_OWNER.CDO_POLICY POL_
+				ON p.POLICYID = POL_.POLICYID
+		where 
+			trim(p.policynumber_1_np)=trim(pc.policynumber_1_np) 
+			and 
+			p.PolEffectiveDate_np=pc.PolEffectiveDate_np
+			AND 
+			P.PolicyStatus_1_np=PC.PolicyStatus_1_np
+			and 
+			pol.PRODUCT_1_NP = pol_.PRODUCT_1_NP
+		)
+	and 
+	DATE_PART('YEAR',DATE(PC.PolEffectiveDate_np))>=2018
+;
