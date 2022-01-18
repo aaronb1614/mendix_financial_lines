@@ -1,0 +1,132 @@
+select
+ 	'Commercial Crime' AS PRODUCT
+	, 'Unknown' as "Company Type"
+ 	, Upper(trim(t.POLICYNUMBER_1_NP)) AS CORE_EXCL_POL_NUMBER_JOIN
+	, SUBSTR(t.NAICS_CODE_NP,1,6) AS NAICS_CODE
+	, NULL AS US_EXPOSURE
+	, NULL AS "Hazard Class"
+	, DATE(t.PolEffectiveDate_np) as "Policy Effective Date"
+	, t.POLEFFECTIVEYEAR_NP as "Underwriting Year"
+ 	, CASE 
+ 		WHEN 
+			t.NEWRENEWAL_NP='New' 
+			THEN 
+				'N'
+	 	WHEN t.NEWRENEWAL_NP='Renewal' 
+			THEN 
+				'R'
+	 		ELSE 
+				'NA' 
+	END AS NEWRENEWAL_NP
+	, t.QorBPremium_1_np as "Quoted or Bound Premium"
+	, CASE
+		WHEN
+			t.PolicyStatus_1_np LIKE '%Bound%'
+			AND
+			t.NEWRENEWAL_NP = 'Renewal'
+			AND
+			(
+			t.ValidatedRC_Net_1_np IS NULL
+			OR
+			t.MechanicalRCGross_1_np IS NULL
+			OR
+			t.MechanicalRCNet_1_np IS NULL
+			OR
+			t.ValidatedRCGross_1_np IS NULL
+			)
+				THEN
+					'Bound - Policy Incorrect'
+		WHEN
+			t.POLICYSTATUS_1_NP LIKE '%Bound - CORE Entry Incorrect%'
+			THEN
+				'Bound - Policy Incorrect'
+		ELSE
+			PolicyStatus_1_np
+	END AS "Policy Status"
+	, CASE
+		WHEN
+			(
+			t.ValidatedRC_Net_1_np IS NULL
+			OR
+			t.MechanicalRCGross_1_np IS NULL
+			OR
+			t.MechanicalRCNet_1_np IS NULL
+			OR
+			t.ValidatedRCGross_1_np IS NULL
+			)
+				THEN
+					'1'
+		ELSE
+			'0'
+	END AS "Rate Change Missing Indicator"
+	, t.ValidatedRC_Net_1_np as "Validated RC Net"
+	, t.VALIDATEDRC_NET_COMMENT_1_NP as "Validated RC Net Comment"
+	, t.BenchmarkPremium_1_np as "Benchmark Premium"
+	, t.QORBBENCHMARKRATIO_1_NP  as "B/B Ratio"
+	, t.MechanicalRCGross_1_np as "Mechanical RC Gross"
+	, t.MechanicalRCNet_1_np as "Mechanical RC Net"
+	, t.ValidatedRCGross_1_np as "Validated RC Gross"
+	, t.QC_FX_NP AS "QC FX Rate"
+	, t.QC_FX_EP AS "QC FX Rate_ep"
+	, t.QC_FX_ep_RCFX  AS "QC FX Rate ep RC"
+	, t.Brokerage_1_ep AS "Brokerage in % ep"
+	, t.Brokerage_1_np AS "Brokerage in %"
+	, t.QORBPREMIUM_1_EP AS "Quoted or Bound Premium ep"
+	, t.ChangeDedFactor_1_np AS "Change in DED Factor"
+	, t.ChangeAP_1_np AS "Change in Att Point"
+	, t.ChangeLimit_1_np AS "Change in Limit"
+	, t.ChangeExposure_1_np AS "Change in Exposure"
+	, t.QORBPREMIUM_1_EP*QC_FX_EP as "Expiring Premium Gross USD-FxEP"
+	, t.QORBPREMIUM_1_EP*QC_FX_EP_RCFX as "Expiring Premium Gross USD-FxEPRC"
+	, t.QORBPREMIUM_1_NP*QC_FX_NP AS "Quoted or Bound Premium USD NP"
+	, t.QORBPREMIUM_1_EP*QC_FX_EP as "Quoted or Bound Premium USD EP"
+	, t.QORBPREMIUM_1_NP AS "Quoted or Bound Premium NP"
+	, t.QORBPREMIUM_1_EP as "Quoted or Bound Premium EP"
+	, 'Commercial Crime' AS MENDIX_SRC
+	, t.GELR_1_NP AS "GELR"
+	, t.Attachment_1_np*QC_FX_np as "Attachment Point in USD"
+	, t.Limit_1_np*QC_FX_np as "Limit in USD"
+	, t.QorBRpM_1_np as "Quoted or Bound Rate per Million"
+	, t.PrimaryExcess_1_np as "Primary_Excess"
+	, CASE 
+		WHEN 
+			t.Underwriter_Surname_np=Underwriter_Firstname_np 
+			THEN 
+				t.Underwriter_Surname_np 
+			ELSE 
+				t.Underwriter_Firstname_np||' '||Underwriter_Surname_np 
+	END AS UNDERWRITER
+	, CASE 
+		WHEN 
+			upper(trim(t.SYSTEMRISKID)) = 'N/A - GENNEXT2' 
+			THEN 
+				TO_DATE(t.PolExpirationDate_np,'YYYY-MM-DD')
+			ELSE 
+				TO_DATE(t.PolExpirationDate_np,'DD/MM/YYYY') 
+	END as "Policy Expiration Date"
+	, t.ChangeStructure_1_np AS "Change Structure"
+	, t.ChangeExposure_1_np AS "Change Exposure"
+	, t.ChangeTotal_1_np AS "Change Total"
+	, t.WrittenLines_1_np AS WRITTENLINE_1_NP
+	, t.SEFCOVERAGE_1_NP AS SEF_COVERAGE
+	, t.SEFSTRUCTURE_1_NP AS SEF_STRUCTURE
+	, t.SEFSUBLIMIT_1_NP AS SEF_SUBLIMIT
+	, t.SEFCOINSRUANCE_1_NP AS SEF_COINSURANCE
+	, t.EMPLTOTAL_NP AS EMPLOYEES
+	, t.BROKER_NP AS BROKER
+	, t.TURNOVER_ECM_NP*t.EC_FX_NP AS TURNOVER_USD
+	, t.DEDUCTIBLESUGGESTED_1_NP AS DEDUCTIBLE_SUGGESTED
+	, t.DEDUCTIBLECHOSEN_1_NP AS DEDUCTIBLE
+
+from 
+	DB_P_STG_MENDIX_CCR.DB_P_STG_MENDIX_CCR_OWNER.GENNEXT_CCR_COMBINED_POLICY t
+where 
+	t.POLICYNUMBER_1_NP is not null 
+	and 
+	trim(t.POLICYNUMBER_1_NP) NOT IN ('-','0','','0000','000','00000')
+	and 
+	t.PolicyStatus_1_np in ('Renewed','On Risk - Awaiting Booking','On Risk - Booked','Bound')
+	and 
+	DATE_PART('YEAR',DATE(t.PolEffectiveDate_np))>=2018
+	AND 
+	t.QC_FX_NP != '';
