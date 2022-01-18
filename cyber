@@ -1,0 +1,104 @@
+select DISTINCT
+'Cyber' AS PRODUCT,
+INITCAP(COMPANYTYPE_NP) as "Company Type",
+UPPER(TRIM(POLICYNUMBER_1_NP)) AS CORE_EXCL_POL_NUMBER_JOIN, 
+SUBSTR(NAICS_CODE_NP,1,6) AS NAICS_CODE,
+NULL AS US_EXPOSURE,
+CYBERINDUSTRY_NP AS "Hazard Class", 
+DATE(PolEffectiveDate_np) as "Policy Effective Date",
+POLEFFECTIVEYEAR_NP as "Underwriting Year",
+CASE WHEN NEWRENEWAL_NP='New' THEN 'N'
+	 WHEN NEWRENEWAL_NP='Renewal' THEN 'R'
+	 ELSE 'NA' END AS NEWRENEWAL_NP,
+QORBRPM_1_NP as "Quoted or Bound Premium"
+	, CASE
+		WHEN
+			PolicyStatus_1_np LIKE '%Bound%'
+			AND
+			NEWRENEWAL_NP = 'Renewal'
+			AND
+			(
+			ValidatedRCNet_1_np IS NULL
+			OR
+			MechanicalRCGross_1_np IS NULL
+			OR
+			MechanicalRCNet_1_np IS NULL
+			OR
+			ValidatedRCGross_1_np IS NULL
+			)
+				THEN
+					'Bound - Policy Incorrect'
+		WHEN
+			POLICYSTATUS_1_NP LIKE '%Bound - CORE Entry Incorrect%'
+			THEN
+				'Bound - Policy Incorrect'
+		ELSE
+			PolicyStatus_1_np
+		END AS "Policy Status"
+	, CASE
+		WHEN
+			(
+			ValidatedRCNet_1_np IS NULL
+			OR
+			MechanicalRCGross_1_np IS NULL
+			OR
+			MechanicalRCNet_1_np IS NULL
+			OR
+			ValidatedRCGross_1_np IS NULL
+			)
+				THEN
+					'1'
+		ELSE
+			'0'
+		END AS "Rate Change Missing Indicator"
+, ValidatedRCNet_1_np as "Validated RC Net",
+VALIDATEDRCNET_COMMENT_1_NP as "Validated RC Net Comment",
+BENCHMARKPREMIUM_QC_1_NP as "Benchmark Premium",
+QORBBENCHMARKRATIO_1_NP  as "B/B Ratio",
+MechanicalRCGross_1_np as "Mechanical RC Gross",
+MechanicalRCNet_1_np as "Mechanical RC Net",
+ValidatedRCGross_1_np as "Validated RC Gross",
+QC_FX_NP AS "QC FX Rate",		
+QC_FX_EP AS "QC FX Rate_ep",		
+QC_FX_ep_RC  AS "QC FX Rate ep RC",		
+Brokerage_1_ep AS "Brokerage in % ep",		
+Brokerage_1_np AS "Brokerage in %",		
+QorBPremium_QC_1_ep AS "Quoted or Bound Premium ep",		
+ChangeDedFactor_1_np AS "Change in DED Factor",			
+ChangeAP_1_np AS "Change in Att Point",		
+ChangeLimit_1_np AS "Change in Limit",		
+ChangeExposure_1_np AS "Change in Exposure",		
+QorBPremium_QC_1_ep*QC_FX_EP as "Expiring Premium Gross USD-FxEP",		
+QorBPremium_QC_1_ep*QC_FX_ep_RC as "Expiring Premium Gross USD-FxEPRC",		
+QorBPremium_QC_1_np*QC_FX_NP AS "Quoted or Bound Premium USD NP",
+QorBPremium_QC_1_ep*QC_FX_EP as "Quoted or Bound Premium USD EP",	
+QorBPremium_QC_1_np AS "Quoted or Bound Premium NP",
+QorBPremium_QC_1_ep as "Quoted or Bound Premium EP",
+'Cyber' AS MENDIX_SRC
+,GELR_1_NP AS "GELR"
+, ATTACHMENT_QC_1_NP*QC_FX_np as "Attachment Point in USD"
+, LIMIT_QC_1_NP*QC_FX_np "Limit in USD"
+, QorBRpM_1_np as "Quoted or Bound Rate per Million"
+, PrimaryExcess_1_np as "Primary_Excess"
+, CASE WHEN UNDERWRITERSURNAME_NP=UNDERWRITERFIRSTNAME_NP THEN UNDERWRITERSURNAME_NP ELSE UNDERWRITERFIRSTNAME_NP||' '||UNDERWRITERSURNAME_NP END AS UNDERWRITER
+, TO_DATE(PolExpirationDate_np,'DD/MM/YYYY') AS "Policy Expiration Date"
+, ChangeDedFactor_1_np AS "Change In Ded Factor"
+, ChangeAP_1_np AS "Change AP"
+, ChangeLimit_1_np AS "Change In Limit"
+, ChangeStructure_1_np AS "Change Structure"
+, ChangeExposure_1_np AS "Change Exposure"
+, ChangeTotal_1_np AS "Change Total"
+, WrittenLine_1_np AS WRITTENLINE_1_NP
+
+, ObjModApplied_np AS OBJMODAPPLIED_NP
+, ObjModApplied_ep_RC AS OBJMODAPPLIED_EP_RC
+, BaseLossCost_QC_np AS BASELOSSCOST_QC_NP
+, BaseLossCost_QC_ep_RC AS BASELOSSCOST_QC_EP_RC
+, BROKER_NP AS BROKER
+
+from DB_P_STG_MENDIX_CYBER.DB_P_STG_MENDIX_CYBER_OWNER.V_POLICY_COMBINED_CYBER
+where POLICYNUMBER_1_NP is not null and trim(POLICYNUMBER_1_NP) NOT IN ('-','0','','0000','000','00000')
+and PolicyStatus_1_np in ('Renewed','On Risk - Awaiting Booking','On Risk - Booked','Bound')
+--and PolicyStatus_1_np='Bound'
+and DATE_PART('YEAR',DATE(PolEffectiveDate_np))>=2018
+;
