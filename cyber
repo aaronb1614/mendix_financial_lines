@@ -98,7 +98,6 @@ QorBPremium_QC_1_ep as "Quoted or Bound Premium EP",
 
 from DB_P_STG_MENDIX_CYBER.DB_P_STG_MENDIX_CYBER_OWNER.V_POLICY_COMBINED_CYBER
 where POLICYNUMBER_1_NP is not null and trim(POLICYNUMBER_1_NP) NOT IN ('-','0','','0000','000','00000')
-and PolicyStatus_1_np in ('Renewed','On Risk - Awaiting Booking','On Risk - Booked','Bound')
---and PolicyStatus_1_np='Bound'
-and DATE_PART('YEAR',DATE(PolEffectiveDate_np))>=2018
+and PolicyStatus_1_np in ('Renewed','On Risk - Awaiting Booking','On Risk - Booked','Bound') /* single bound status to be removed*/
+and DATE_PART('YEAR',DATE(PolEffectiveDate_np))>=2018 
 ;
