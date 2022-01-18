@@ -1,0 +1,133 @@
+select DISTINCT
+	'Tech E&O' AS PRODUCT
+	, INITCAP(T.COMPANYTYPE_NP) as "Company Type"
+	, UPPER(TRIM(T.POLICYNUMBER_1_NP)) AS CORE_EXCL_POL_NUMBER_JOIN
+	, SUBSTR(t.NAICS_CODEDESCRIPTION_NP,1,6) AS NAICS_CODE /*NAICS CODE FIELD IS NULL SO NAICS DESCRIPTION IS USED*/
+	, NULL AS US_EXPOSURE
+	, T.CYBERINDUSTRY_NP AS "Hazard Class"
+	, DATE(T.PolEffectiveDate_np) as "Policy Effective Date"
+	, T.POLEFFECTIVEYEAR_NP as "Underwriting Year"
+	, CASE 
+		WHEN 
+			T.NEWRENEWAL_NP='New' 
+			THEN 
+				'N'
+		WHEN T.NEWRENEWAL_NP='Renewal' 
+			THEN 
+				'R'
+		 ELSE 'NA' END AS NEWRENEWAL_NP
+	, T.QORBRPM_1_NP as "Quoted or Bound Premium"
+	, CASE
+		WHEN
+			T.PolicyStatus_1_np LIKE '%Bound%'
+			AND
+			T.NEWRENEWAL_NP = 'Renewal'
+			AND
+			(
+			T.ValidatedRCNet_1_np IS NULL
+			OR
+			T.MechanicalRCGross_1_np IS NULL
+			OR
+			T.MechanicalRCNet_1_np IS NULL
+			OR
+			T.ValidatedRCGross_1_np IS NULL
+			)
+				THEN
+					'Bound - Policy Incorrect'
+		WHEN
+			T.POLICYSTATUS_1_NP LIKE '%Bound - CORE Entry Incorrect%'
+			THEN
+				'Bound - Policy Incorrect'
+		ELSE
+			T.PolicyStatus_1_np
+		END AS "Policy Status"
+	, CASE
+		WHEN
+			(
+			T.ValidatedRCNet_1_np IS NULL
+			OR
+			T.MechanicalRCGross_1_np IS NULL
+			OR
+			T.MechanicalRCNet_1_np IS NULL
+			OR
+			T.ValidatedRCGross_1_np IS NULL
+			)
+				THEN
+					'1'
+		ELSE
+			'0'
+		END AS "Rate Change Missing Indicator"
+	, T.ValidatedRCNet_1_np as "Validated RC Net"
+	, T.VALIDATEDRCNET_COMMENT_1_NP as "Validated RC Net Comment"
+	, T.BENCHMARKPREMIUM_QC_1_NP as "Benchmark Premium"
+	, T.QORBBENCHMARKRATIO_1_NP  as "B/B Ratio"
+	, T.MechanicalRCGross_1_np as "Mechanical RC Gross"
+	, T.MechanicalRCNet_1_np as "Mechanical RC Net"
+	, T.ValidatedRCGross_1_np as "Validated RC Gross"
+	, T.QC_FX_NP AS "QC FX Rate"		
+	, T.QC_FX_EP AS "QC FX Rate_ep"		
+	, T.QC_FX_ep_RC  AS "QC FX Rate ep RC"
+	, T.Brokerage_1_ep AS "Brokerage in % ep"	
+	, T.Brokerage_1_np AS "Brokerage in %"	
+	, T.QorBPremium_QC_1_ep AS "Quoted or Bound Premium ep"		
+	, T.ChangeDedFactor_1_np AS "Change in DED Factor"		
+	, T.ChangeAP_1_np AS "Change in Att Point"		
+	, T.ChangeLimit_1_np AS "Change in Limit"		
+	, T.ChangeExposure_1_np AS "Change in Exposure"		
+	, T.QorBPremium_QC_1_ep*QC_FX_EP as "Expiring Premium Gross USD-FxEP"	
+	, T.QorBPremium_QC_1_ep*QC_FX_ep_RC as "Expiring Premium Gross USD-FxEPRC"	
+	, T.QorBPremium_QC_1_np*QC_FX_NP AS "Quoted or Bound Premium USD NP"
+	, T.QorBPremium_QC_1_ep*QC_FX_EP as "Quoted or Bound Premium USD EP"
+	, T.QorBPremium_QC_1_np AS "Quoted or Bound Premium NP"
+	, T.QorBPremium_QC_1_ep as "Quoted or Bound Premium EP"
+	, 'Tech E&O' AS MENDIX_SRC
+	, T.GELR_1_NP AS "GELR"
+	, CASE 
+		WHEN
+			T.QC_FX_np = ''
+		THEN
+			T.ATTACHMENT_QC_1_NP*1
+		ELSE
+			T.ATTACHMENT_QC_1_NP*T.QC_FX_np END as "Attachment Point in USD"
+	, CASE
+		WHEN
+			T.LIMIT_QC_1_NP IS NULL
+			THEN
+				T.LimitTech_QC_1_np*T.QC_FX_NP
+			ELSE
+				T.LIMIT_QC_1_NP*T.QC_FX_NP
+		END AS "Limit in USD"
+	, T.QorBRpM_1_np as "Quoted or Bound Rate per Million"
+	, T.PrimaryExcess_1_np as "Primary_Excess"
+	, CASE WHEN T.UNDERWRITERSURNAME_NP=T.UNDERWRITERFIRSTNAME_NP THEN T.UNDERWRITERSURNAME_NP ELSE T.UNDERWRITERFIRSTNAME_NP||' '||T.UNDERWRITERSURNAME_NP END AS UNDERWRITER
+	, TO_DATE(PolExpirationDate_np,'DD/MM/YYYY') AS "Policy Expiration Date"
+	, ChangeDedFactor_1_np AS "Change In Ded Factor"
+	, ChangeAP_1_np AS "Change AP"
+	, ChangeLimit_1_np AS "Change In Limit"
+	, ChangeOtherStructure_1_np AS "Change Other Structure"
+	, ChangeStructure_1_np AS "Change Structure"
+	, ChangeExposure_1_np AS "Change Exposure"
+	, ChangeTotal_1_np AS "Change Total"
+	, WrittenLine_1_np AS WRITTENLINE_1_NP
+	, T.SELECTEDSERVICE_NP AS TECH_SELECTEDSERVICE_NP
+	, T.BUSINESSACTIVITY_NP AS TECH_BUSINESSACTIVITY_NP
+	
+	, t.ObjModApplied_np AS OBJMODAPPLIED_NP
+	, t.ObjModApplied_ep_RC AS OBJMODAPPLIED_EP_RC
+	, t.ObjModAppliedTech_np AS OBJMODAPPLIEDTECH_NP
+	--, t.ObjModAppliedTech_ep_RC
+	, t.BaseLossCost_QC_np AS BASELOSSCOST_QC_NP
+	, t.BaseLossCost_QC_ep_RC AS BASELOSSCOST_QC_EP_RC
+	, t.BaseLossCostTech_QC_np AS BASELOSSCOSTTECH_QC_NP
+	, t.BaseLossCostTech_QC_ep_RC AS BASELOSSCOSTTECH_QC_EP_RC
+	, BROKER_NP AS BROKER
+	
+from 
+	DB_P_STG_MENDIX_CYBER.DB_P_STG_MENDIX_CYBER_OWNER.V_TECH_POLICY T
+	
+where 
+	T.POLICYNUMBER_1_NP is not null and trim(T.POLICYNUMBER_1_NP) NOT IN ('-','0','','0000','000','00000')
+	and T.PolicyStatus_1_np in ('Renewed','On Risk - Awaiting Booking','On Risk - Booked','Bound')
+	--and PolicyStatus_1_np='Bound'
+	and DATE_PART('YEAR',DATE(T.PolEffectiveDate_np))>=2018
+;
