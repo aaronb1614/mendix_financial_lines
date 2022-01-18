@@ -11,7 +11,7 @@ SELECT
 		POL.PRODUCT_1_NP = 'PTL'
 			THEN 'Commercial D&O PTL'
 	ELSE 'Commercial D&O'
-	END AS PRODUCT
+	END AS PRODUCT /* this is the logic for do product*/
 
 	, INITCAP(POL.COMPANYTYPE_NP) AS "Company Type"
 	
