@@ -127,7 +127,6 @@ from
 	
 where 
 	T.POLICYNUMBER_1_NP is not null and trim(T.POLICYNUMBER_1_NP) NOT IN ('-','0','','0000','000','00000')
-	and T.PolicyStatus_1_np in ('Renewed','On Risk - Awaiting Booking','On Risk - Booked','Bound')
-	--and PolicyStatus_1_np='Bound'
+	and T.PolicyStatus_1_np in ('Renewed','On Risk - Awaiting Booking','On Risk - Booked','Bound') /* all*/
 	and DATE_PART('YEAR',DATE(T.PolEffectiveDate_np))>=2018
 ;
